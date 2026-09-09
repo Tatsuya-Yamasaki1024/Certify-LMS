@@ -19,6 +19,8 @@ use App\Models\MockExamQuestion;
 use App\Models\MockExamSession;
 use App\Models\Part;
 use App\Models\QuestionCategory;
+use App\Models\QaReply;
+use App\Models\QaThread;
 use App\Models\Section;
 use App\Models\SectionImage;
 use App\Models\SectionProgress;
@@ -44,6 +46,8 @@ use App\Policies\MockExamSessionPolicy;
 use App\Policies\PartPolicy;
 use App\Policies\PartViewPolicy;
 use App\Policies\QuestionCategoryPolicy;
+use App\Policies\QaReplyPolicy;
+use App\Policies\QaThreadPolicy;
 use App\Policies\SectionImagePolicy;
 use App\Policies\SectionPolicy;
 use App\Policies\SectionProgressPolicy;
@@ -72,6 +76,8 @@ class AuthServiceProvider extends ServiceProvider
         Part::class => PartPolicy::class,
         Chapter::class => ChapterPolicy::class,
         ChatRoom::class => ChatRoomPolicy::class,
+        QaThread::class => QaThreadPolicy::class,
+        QaReply::class => QaReplyPolicy::class,
         Section::class => SectionPolicy::class,
         SectionImage::class => SectionImagePolicy::class,
         SectionQuestion::class => SectionQuestionPolicy::class,

@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AdminQaReplyController;
+use App\Http\Controllers\AdminQaThreadController;
+use App\Http\Controllers\QaReplyController;
+use App\Http\Controllers\QaThreadController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CertificationCatalogController;
@@ -192,7 +196,21 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         ->name('admin.enrollments.updateExamDate');
     Route::post('enrollments/{enrollment}/fail', [EnrollmentManagementController::class, 'fail'])
         ->name('admin.enrollments.fail');
+
+    //Q&A
+    Route::get('qa-board', [AdminQaThreadController::class, 'index'])
+        ->name('admin.qa-board.index');
+
+    Route::get('qa-board/{thread}', [AdminQaThreadController::class, 'show'])
+        ->name('admin.qa-board.show');
+
+    Route::delete('qa-board/{thread}', [AdminQaThreadController::class, 'destroy'])
+        ->name('admin.qa-board.destroy');
+
+    Route::delete('qa-board/{thread}/replies/{reply}', [AdminQaReplyController::class, 'destroy'])
+        ->name('admin.qa-board.replies.destroy');
 });
+
 
 // ============================================================
 // admin + コーチ共有ルート(資格マスタ閲覧 / 教材管理: コーチは担当資格のみ Policy + scope で絞り込み)
@@ -377,7 +395,7 @@ Route::middleware(['auth', 'role:student', 'active-learning'])
     });
 
 // ============================================================
-// 受講生専用ルート — 面談予約 (履歴一覧は資格横断 / 予約画面は default 資格に解決)
+// 受講生専用ルート — 面談予約 (履歴一覧は資格横断 / 予約画面は default 資格に解決) 
 // ============================================================
 Route::middleware(['auth', 'role:student', 'active-learning'])->group(function () {
     // 履歴一覧: 資格横断、Switcher 適用なし
@@ -396,6 +414,27 @@ Route::middleware(['auth', 'role:student', 'active-learning'])->group(function (
     });
 });
 
+
+// ============================================================
+// 受講生専用ルート — Q&A
+// ============================================================
+Route::middleware(['auth', 'role:student', 'active-learning'])->group(function () {
+    Route::get('qa-board/create', [QaThreadController::class, 'create'])
+        ->name('qa-board.create');
+    Route::post('qa-board', [QaThreadController::class, 'store'])
+        ->name('qa-board.store');
+    Route::get('qa-board/{thread}/edit', [QaThreadController::class, 'edit'])
+        ->name('qa-board.edit');
+    Route::patch('qa-board/{thread}', [QaThreadController::class, 'update'])
+        ->name('qa-board.update');
+    Route::delete('qa-board/{thread}', [QaThreadController::class, 'destroy'])
+        ->name('qa-board.destroy');
+    Route::post('qa-board/{thread}/resolve', [QaThreadController::class, 'resolve'])
+        ->name('qa-board.resolve');
+    Route::post('qa-board/{thread}/unresolve', [QaThreadController::class, 'unresolve'])
+        ->name('qa-board.unresolve');
+});
+
 // ============================================================
 // 当事者共通ルート — 面談予約の詳細 / キャンセル
 // ============================================================
@@ -405,7 +444,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // ============================================================
-// 受講生・コーチ共有 — chat (グループルーム閲覧 / メッセージ送信)
+// 受講生・コーチ共有 — chat (グループルーム閲覧 / メッセージ送信) 
 // ============================================================
 Route::middleware(['auth', 'role:student,coach', 'active-learning'])->group(function () {
     Route::get('chat-rooms', [ChatRoomController::class, 'index'])
@@ -414,6 +453,25 @@ Route::middleware(['auth', 'role:student,coach', 'active-learning'])->group(func
         ->name('chat.show');
     Route::post('chat-rooms/{room}/messages', [ChatRoomController::class, 'storeMessage'])
         ->name('chat.storeMessage');
+});
+
+
+// ============================================================
+// 受講生・コーチ共有 — Q&A
+// ============================================================
+Route::middleware(['auth', 'role:student,coach', 'active-learning'])->group(function () {
+    Route::get('qa-board', [QaThreadController::class, 'index'])
+        ->name('qa-board.index');
+    Route::get('qa-board/{thread}', [QaThreadController::class, 'show'])
+        ->name('qa-board.show');
+    Route::post('qa-board/{thread}/replies', [QaReplyController::class, 'store'])
+        ->name('qa-board.replies.store');
+    Route::get('qa-board/{thread}/replies/{reply}/edit', [QaReplyController::class, 'edit'])
+        ->name('qa-board.replies.edit');
+    Route::patch('qa-board/{thread}/replies/{reply}', [QaReplyController::class, 'update'])
+        ->name('qa-board.replies.update');
+    Route::delete('qa-board/{thread}/replies/{reply}', [QaReplyController::class, 'destroy'])
+        ->name('qa-board.replies.destroy');
 });
 
 // ============================================================

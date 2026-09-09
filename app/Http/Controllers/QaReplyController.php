@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\QaBoard\StoreQaReplyRequest;
+use App\Http\Requests\QaBoard\UpdateQaReplyRequest;
+use App\Models\QaReply;
+use App\Models\QaThread;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+
+class QaReplyController extends Controller
+{
+    public function store(
+        StoreQaReplyRequest $request,
+        QaThread $thread
+    ): RedirectResponse {
+        $this->authorize('create', [QaReply::class, $thread]);
+
+        $thread->replies()->create([
+            'user_id' => $request->user()->id,
+            'body' => $request->validated('body'),
+        ]);
+
+        return back()->with('success', '回答を投稿しました。');
+    }
+
+    public function edit(
+        QaThread $thread,
+        QaReply $reply
+    ): View {
+        $this->authorize('update', $reply);
+
+        abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        return view('qa-thread.reply-edit', [
+            'thread' => $thread,
+            'reply' => $reply,
+        ]);
+    }
+
+    public function update(
+        UpdateQaReplyRequest $request,
+        QaThread $thread,
+        QaReply $reply
+    ): RedirectResponse {
+        $this->authorize('update', $reply);
+
+        abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        $reply->update($request->validated());
+
+        return redirect()
+            ->route('qa-board.show', $thread)
+            ->with('success', '回答を更新しました。');
+    }
+
+    public function destroy(
+        QaThread $thread,
+        QaReply $reply
+    ): RedirectResponse {
+        $this->authorize('delete', $reply);
+
+        abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        $reply->delete();
+
+        return back()->with('success', '回答を削除しました。');
+    }
+}
