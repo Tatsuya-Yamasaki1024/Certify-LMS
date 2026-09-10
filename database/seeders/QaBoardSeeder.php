@@ -19,6 +19,10 @@ class QaBoardSeeder extends Seeder
             ->where('email', 'student@certify-lms.test')
             ->first();
 
+        $otherStudent = User::query()
+            ->where('email', 'student-noquota@certify-lms.test')
+            ->first();
+
         $coach = User::query()
             ->where('email', 'coach@certify-lms.test')
             ->first();
@@ -48,6 +52,7 @@ class QaBoardSeeder extends Seeder
             $this->createThreads(
                 $certification,
                 $student,
+                $otherStudent,
                 $coach,
                 $index
             );
@@ -57,6 +62,7 @@ class QaBoardSeeder extends Seeder
     private function createThreads(
         Certification $certification,
         User $student,
+        ?User $otherStudent,
         ?User $coach,
         int $index
     ): void {
@@ -66,7 +72,7 @@ class QaBoardSeeder extends Seeder
         QaThread::factory()->create([
             'user_id' => $student->id,
             'certification_id' => $certification->id,
-            'title' => $certification->name . 'の勉強方法について',
+            'title' => $certification->name.'の勉強方法について',
             'body' => '効率よく学習するためのおすすめの勉強方法を教えてください。',
             'status' => QaThreadStatus::Unresolved->value,
             'resolved_at' => null,
@@ -78,7 +84,7 @@ class QaBoardSeeder extends Seeder
         $resolvedThread = QaThread::factory()->create([
             'user_id' => $student->id,
             'certification_id' => $certification->id,
-            'title' => $certification->name . 'の試験対策について',
+            'title' => $certification->name.'の試験対策について',
             'body' => '試験前に重点的に確認しておいた方がよい範囲はありますか？',
             'status' => QaThreadStatus::Resolved->value,
             'resolved_at' => now()->subDays($baseDays - 4),
@@ -106,9 +112,9 @@ class QaBoardSeeder extends Seeder
 
         // 未解決・回答1件
         $unresolvedThread = QaThread::factory()->create([
-            'user_id' => $student->id,
+            'user_id' => $otherStudent?->id ?? $student->id,
             'certification_id' => $certification->id,
-            'title' => $certification->name . 'について質問があります',
+            'title' => $certification->name.'について質問があります',
             'body' => 'この分野の問題がなかなか理解できません。勉強のコツを教えてください。',
             'status' => QaThreadStatus::Unresolved->value,
             'resolved_at' => null,

@@ -44,7 +44,8 @@ class QaThreadPolicy
     public function update(User $user, QaThread $qaThread): bool
     {
         return $user->role === UserRole::Student
-            && $qaThread->user_id === $user->id;
+            && $qaThread->user_id === $user->id
+            && $qaThread->certification->status === CertificationStatus::Published;
     }
 
     public function delete(User $user, QaThread $qaThread): bool
@@ -53,18 +54,21 @@ class QaThreadPolicy
             || (
                 $user->role === UserRole::Student
                 && $qaThread->user_id === $user->id
+                && $qaThread->certification->status === CertificationStatus::Published
             );
     }
 
     public function resolve(User $user, QaThread $qaThread): bool
     {
         return $user->role === UserRole::Student
-            && $qaThread->user_id === $user->id;
+            && $qaThread->user_id === $user->id
+            && $qaThread->certification->status === CertificationStatus::Published;
     }
 
     public function unresolve(User $user, QaThread $qaThread): bool
     {
         return $user->role === UserRole::Student
-            && $qaThread->user_id === $user->id;
+            && $qaThread->user_id === $user->id
+            && $qaThread->certification->status === CertificationStatus::Published;
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\CertificationStatus;
 use App\Enums\QaThreadStatus;
 use App\Enums\UserRole;
-use App\Enums\CertificationStatus;
 use App\Http\Requests\QaBoard\StoreQaThreadRequest;
 use App\Http\Requests\QaBoard\UpdateQaThreadRequest;
 use App\Models\Certification;
@@ -24,43 +24,42 @@ class QaThreadController extends Controller
         $threads = QaThread::query()
             ->with(['user', 'certification'])
             ->withCount('replies')
-            ->whereHas('certification', function ($query) {
+            ->whereHas('certification', function ($query) use ($user) {
                 $query->where('status', CertificationStatus::Published);
+
+                if ($user->role === UserRole::Coach) {
+                    $query->whereHas('coaches', function ($query) use ($user) {
+                        $query->where('users.id', $user->id);
+                    });
+                }
             })
             ->when(
-                $user->role === UserRole::Coach,
-                fn($query) => $query->whereHas(
-                    'certification.coaches',
-                    fn($coachQuery) => $coachQuery->where('users.id', $user->id)
-                )
-            )
-            ->when(
                 $request->filled('certification_id'),
-                fn($query) => $query->where(
+                fn ($query) => $query->where(
                     'certification_id',
                     $request->input('certification_id')
                 )
             )
             ->when(
                 $request->input('status') === QaThreadStatus::Resolved->value,
-                fn($query) => $query->where(
+                fn ($query) => $query->where(
                     'status',
                     QaThreadStatus::Resolved
                 )
             )
             ->when(
                 $request->input('status') === QaThreadStatus::Unresolved->value,
-                fn($query) => $query->where(
+                fn ($query) => $query->where(
                     'status',
                     QaThreadStatus::Unresolved
                 )
             )
             ->when(
                 $request->filled('keyword'),
-                fn($query) => $query->where(
+                fn ($query) => $query->where(
                     'body',
                     'like',
-                    '%' . $request->input('keyword') . '%'
+                    '%'.$request->input('keyword').'%'
                 )
             )
             ->latest()
@@ -68,9 +67,13 @@ class QaThreadController extends Controller
             ->withQueryString();
 
         $certifications = Certification::query()
-            ->where('status', CertificationStatus::Published)
-            ->orderBy('name')
-            ->get();
+            ->where('status', CertificationStatus::Published);
+
+        if ($user->role === UserRole::Coach) {
+            $certifications->whereHas('coaches', function ($query) use ($user) {
+                $query->where('users.id', $user->id);
+            });
+        }
 
         return view('qa-thread.index', [
             'threads' => $threads,
@@ -79,7 +82,9 @@ class QaThreadController extends Controller
                 'certification_id' => $request->input('certification_id', ''),
                 'keyword' => $request->input('keyword', ''),
             ],
-            'certifications' => $certifications,
+            'certifications' => $certifications
+                ->orderBy('name')
+                ->get(),
             'publishedStatus' => CertificationStatus::Published,
         ]);
     }
@@ -87,7 +92,8 @@ class QaThreadController extends Controller
     public function create(): View
     {
         $certifications = Certification::query()
-            ->where('status', CertificationStatus::Published)->orderBy('name')
+            ->where('status', CertificationStatus::Published)
+            ->orderBy('name')
             ->get();
 
         return view('qa-thread.create', [
@@ -166,7 +172,7 @@ class QaThreadController extends Controller
         $this->authorize('resolve', $thread);
 
         $thread->update([
-            'status' => 'resolved',
+            'status' => QaThreadStatus::Resolved,
             'resolved_at' => now(),
         ]);
 
@@ -178,7 +184,7 @@ class QaThreadController extends Controller
         $this->authorize('unresolve', $thread);
 
         $thread->update([
-            'status' => 'unresolved',
+            'status' => QaThreadStatus::Unresolved,
             'resolved_at' => null,
         ]);
 

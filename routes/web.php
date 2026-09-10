@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AdminQaReplyController;
 use App\Http\Controllers\AdminQaThreadController;
-use App\Http\Controllers\QaReplyController;
-use App\Http\Controllers\QaThreadController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CertificationCatalogController;
@@ -29,6 +27,8 @@ use App\Http\Controllers\MockExamQuestionController;
 use App\Http\Controllers\MockExamSessionController;
 use App\Http\Controllers\MockExamSessionMonitorController;
 use App\Http\Controllers\PartController;
+use App\Http\Controllers\QaReplyController;
+use App\Http\Controllers\QaThreadController;
 use App\Http\Controllers\QuestionCategoryController;
 use App\Http\Controllers\QuizHistoryController;
 use App\Http\Controllers\QuizStatsController;
@@ -197,7 +197,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('enrollments/{enrollment}/fail', [EnrollmentManagementController::class, 'fail'])
         ->name('admin.enrollments.fail');
 
-    //Q&A
+    // Q&A
     Route::get('qa-board', [AdminQaThreadController::class, 'index'])
         ->name('admin.qa-board.index');
 
@@ -210,7 +210,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('qa-board/{thread}/replies/{reply}', [AdminQaReplyController::class, 'destroy'])
         ->name('admin.qa-board.replies.destroy');
 });
-
 
 // ============================================================
 // admin + コーチ共有ルート(資格マスタ閲覧 / 教材管理: コーチは担当資格のみ Policy + scope で絞り込み)
@@ -395,7 +394,7 @@ Route::middleware(['auth', 'role:student', 'active-learning'])
     });
 
 // ============================================================
-// 受講生専用ルート — 面談予約 (履歴一覧は資格横断 / 予約画面は default 資格に解決) 
+// 受講生専用ルート — 面談予約 (履歴一覧は資格横断 / 予約画面は default 資格に解決)
 // ============================================================
 Route::middleware(['auth', 'role:student', 'active-learning'])->group(function () {
     // 履歴一覧: 資格横断、Switcher 適用なし
@@ -413,7 +412,6 @@ Route::middleware(['auth', 'role:student', 'active-learning'])->group(function (
         Route::post('meetings', [MeetingController::class, 'store'])->name('meetings.store');
     });
 });
-
 
 // ============================================================
 // 受講生専用ルート — Q&A
@@ -444,7 +442,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // ============================================================
-// 受講生・コーチ共有 — chat (グループルーム閲覧 / メッセージ送信) 
+// 受講生・コーチ共有 — chat (グループルーム閲覧 / メッセージ送信)
 // ============================================================
 Route::middleware(['auth', 'role:student,coach', 'active-learning'])->group(function () {
     Route::get('chat-rooms', [ChatRoomController::class, 'index'])
@@ -454,7 +452,6 @@ Route::middleware(['auth', 'role:student,coach', 'active-learning'])->group(func
     Route::post('chat-rooms/{room}/messages', [ChatRoomController::class, 'storeMessage'])
         ->name('chat.storeMessage');
 });
-
 
 // ============================================================
 // 受講生・コーチ共有 — Q&A

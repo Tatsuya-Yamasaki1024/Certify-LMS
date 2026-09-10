@@ -31,8 +31,11 @@ class QaReplyPolicy
 
     public function update(User $user, QaReply $qaReply): bool
     {
-        return $user->role !== UserRole::Admin
-            && $qaReply->user_id === $user->id;
+        return in_array(
+            $user->role,
+            [UserRole::Student, UserRole::Coach],
+            true
+        ) && $qaReply->user_id === $user->id;
     }
 
     public function delete(User $user, QaReply $qaReply): bool

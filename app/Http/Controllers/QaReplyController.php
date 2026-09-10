@@ -31,9 +31,9 @@ class QaReplyController extends Controller
         QaThread $thread,
         QaReply $reply
     ): View {
-        $this->authorize('update', $reply);
-
         abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        $this->authorize('update', $reply);
 
         return view('qa-thread.reply-edit', [
             'thread' => $thread,
@@ -46,9 +46,9 @@ class QaReplyController extends Controller
         QaThread $thread,
         QaReply $reply
     ): RedirectResponse {
-        $this->authorize('update', $reply);
-
         abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        $this->authorize('update', $reply);
 
         $reply->update($request->validated());
 
@@ -61,9 +61,9 @@ class QaReplyController extends Controller
         QaThread $thread,
         QaReply $reply
     ): RedirectResponse {
-        $this->authorize('delete', $reply);
-
         abort_unless($reply->qa_thread_id === $thread->id, 404);
+
+        $this->authorize('delete', $reply);
 
         $reply->delete();
 

@@ -9,7 +9,7 @@ use App\Models\QaThread;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\QaThread>
+ * @extends Factory<QaThread>
  */
 class QaThreadFactory extends Factory
 {
