@@ -31,4 +31,16 @@ class StoreQaThreadRequest extends FormRequest
             'body' => ['required', 'string', 'max:5000'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'certification_id.required' => '資格を選択してください。',
+            'certification_id.exists' => '選択した資格は利用できません。',
+            'title.required' => 'タイトルを入力してください。',
+            'title.max' => 'タイトルは200文字以内で入力してください。',
+            'body.required' => '質問内容を入力してください。',
+            'body.max' => '質問内容は5000文字以内で入力してください。',
+        ];
+    }
 }

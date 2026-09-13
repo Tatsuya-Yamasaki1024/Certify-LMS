@@ -50,12 +50,14 @@ class QaThreadPolicy
 
     public function delete(User $user, QaThread $qaThread): bool
     {
-        return $user->role === UserRole::Admin
-            || (
-                $user->role === UserRole::Student
-                && $qaThread->user_id === $user->id
-                && $qaThread->certification->status === CertificationStatus::Published
-            );
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        return $user->role === UserRole::Student
+            && $qaThread->user_id === $user->id
+            && $qaThread->certification->status === CertificationStatus::Published
+            && ! $qaThread->replies()->exists();
     }
 
     public function resolve(User $user, QaThread $qaThread): bool

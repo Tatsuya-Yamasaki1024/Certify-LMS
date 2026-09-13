@@ -63,7 +63,7 @@ class QaThreadController extends Controller
                 )
             )
             ->latest()
-            ->paginate(10)
+            ->paginate(20)
             ->withQueryString();
 
         $certifications = Certification::query()
@@ -124,7 +124,7 @@ class QaThreadController extends Controller
         $thread->load([
             'user',
             'certification.coaches',
-            'replies.user',
+            'replies' => fn ($query) => $query->with('user')->oldest(),
         ]);
 
         return view('qa-thread.show', [

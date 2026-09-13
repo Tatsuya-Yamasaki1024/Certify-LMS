@@ -23,4 +23,12 @@ class StoreQaReplyRequest extends FormRequest
             'body' => ['required', 'string', 'max:5000'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'body.required' => '回答内容を入力してください。',
+            'body.max' => '回答内容は5000文字以内で入力してください。',
+        ];
+    }
 }
