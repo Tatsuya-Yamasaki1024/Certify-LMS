@@ -104,13 +104,39 @@ class UserSeeder extends Seeder
         User::factory()
             ->student()
             ->state([
-                'name' => '受講生(面談残数なし)',
+                'name' => '受講生佐藤(面談残数なし)',
                 'email' => 'student-noquota@certify-lms.test',
                 'password' => $defaultPassword,
                 'status' => UserStatus::InProgress->value,
                 'bio' => '面談回数を使い切った状態の受講生。',
                 'profile_setup_completed' => true,
                 'email_verified_at' => $now,
+            ])
+            ->create();
+
+        User::factory()
+            ->student()
+            ->state([
+                'name' => '卒業生',
+                'email' => 'student-graduated@certify-lms.test',
+                'password' => $defaultPassword,
+                'status' => UserStatus::Graduated->value,
+                'profile_setup_completed' => true,
+                'email_verified_at' => $now,
+                'plan_expires_at' => now()->subDays(30),
+            ])
+            ->create();
+
+        User::factory()
+            ->student()
+            ->state([
+                'name' => '退会者',
+                'email' => 'student-withdrawn@certify-lms.test',
+                'password' => $defaultPassword,
+                'status' => UserStatus::Withdrawn->value,
+                'profile_setup_completed' => true,
+                'email_verified_at' => $now,
+                'deleted_at' => $now,
             ])
             ->create();
     }
