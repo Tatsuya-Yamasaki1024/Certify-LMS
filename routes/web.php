@@ -28,6 +28,7 @@ use App\Http\Controllers\MockExamQuestionController;
 use App\Http\Controllers\MockExamSessionController;
 use App\Http\Controllers\MockExamSessionMonitorController;
 use App\Http\Controllers\PartController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\QaReplyController;
 use App\Http\Controllers\QaThreadController;
 use App\Http\Controllers\QuestionCategoryController;
@@ -193,6 +194,19 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     Route::post('meeting-packs/{plan}/unarchive', [MeetingPackController::class, 'unarchive'])
         ->name('admin.meeting-packs.unarchive');
+
+    // プラン管理
+    Route::resource('plans', PlanController::class)
+        ->names('admin.plans');
+
+    Route::post('plans/{plan}/publish', [PlanController::class, 'publish'])
+        ->name('admin.plans.publish');
+
+    Route::post('plans/{plan}/archive', [PlanController::class, 'archive'])
+        ->name('admin.plans.archive');
+
+    Route::post('plans/{plan}/unarchive', [PlanController::class, 'unarchive'])
+        ->name('admin.plans.unarchive');
 
     // 担当コーチ割当(資格 ↔ コーチ、admin のみ)
     Route::post('certifications/{certification}/coaches/{coach}', [CertificationCoachAssignmentController::class, 'attach'])
