@@ -56,13 +56,18 @@ class QaThreadController extends Controller
             )
             ->when(
                 $request->filled('keyword'),
-                fn ($query) => $query->where(
-                    'body',
-                    'like',
-                    '%'.$request->input('keyword').'%'
-                )
-            )
-            ->latest()
+                function ($query) use ($request) {
+                    $keyword = $request->input('keyword');
+
+                    $query->where(function ($query) use ($keyword) {
+                        $query->where('title', 'like', '%'.$keyword.'%')
+                            ->orWhere('body', 'like', '%'.$keyword.'%')
+                            ->orWhereHas('replies', function ($query) use ($keyword) {
+                                $query->where('body', 'like', '%'.$keyword.'%');
+                            });
+                    });
+                }
+            )->latest()
             ->paginate(20)
             ->withQueryString();
 
