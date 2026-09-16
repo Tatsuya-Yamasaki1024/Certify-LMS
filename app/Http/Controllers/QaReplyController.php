@@ -4,25 +4,39 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Http\Requests\QaBoard\StoreQaReplyRequest;
 use App\Http\Requests\QaBoard\UpdateQaReplyRequest;
 use App\Models\QaReply;
 use App\Models\QaThread;
+use App\Notifications\Qa\QaReplyReceivedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class QaReplyController extends Controller
 {
+    // 回答を投稿し、質問者に通知する。
     public function store(
         StoreQaReplyRequest $request,
         QaThread $thread
     ): RedirectResponse {
         $this->authorize('create', [QaReply::class, $thread]);
 
-        $thread->replies()->create([
+        $reply = $thread->replies()->create([
             'user_id' => $request->user()->id,
             'body' => $request->validated('body'),
         ]);
+
+        if (
+            $thread->user_id !== $request->user()->id
+            && in_array($thread->user->role, [UserRole::Student, UserRole::Coach], true)
+            && $thread->user->status === UserStatus::InProgress
+        ) {
+            $thread->user->notify(
+                new QaReplyReceivedNotification($reply)
+            );
+        }
 
         return back()->with('success', '回答を投稿しました。');
     }
