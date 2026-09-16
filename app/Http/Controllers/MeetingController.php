@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\MeetingStatus;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Exceptions\MeetingQuota\InsufficientMeetingQuotaException;
 use App\Exceptions\Mentoring\MeetingAlreadyStartedException;
 use App\Exceptions\Mentoring\MeetingNoAvailableCoachException;
@@ -20,6 +22,8 @@ use App\Models\Enrollment;
 use App\Models\Meeting;
 use App\Models\MeetingMemo;
 use App\Models\User;
+use App\Notifications\Meeting\MeetingCanceledNotification;
+use App\Notifications\Meeting\MeetingReservedNotification;
 use App\Services\CoachMeetingLoadService;
 use App\Services\MeetingAvailabilityService;
 use App\Services\MeetingQuotaService;
@@ -216,6 +220,16 @@ class MeetingController extends Controller
             return $meeting->fresh();
         });
 
+        DB::afterCommit(function () use ($meeting): void {
+            $coach = $meeting->coach;
+
+            if ($coach->role === UserRole::Coach && $coach->status === UserStatus::InProgress) {
+                $coach->notify(
+                    new MeetingReservedNotification($meeting)
+                );
+            }
+        });
+
         return redirect()
             ->route('meetings.show', $meeting)
             ->with('success', '面談を予約しました。');
@@ -225,6 +239,7 @@ class MeetingController extends Controller
      * 当事者(受講生 or コーチ)による面談キャンセル。
      * reserved かつ開始前のみキャンセル可。消費済の面談回数 1 回分を返却する。
      */
+    // 当事者による面談キャンセルを実行し、相手方に通知する。
     public function cancel(
         Meeting $meeting,
         RefundQuotaAction $refundAction,
@@ -234,7 +249,11 @@ class MeetingController extends Controller
         $actor = auth()->user();
 
         DB::transaction(function () use ($meeting, $actor) {
-            $locked = Meeting::query()->whereKey($meeting->id)->lockForUpdate()->first();
+            $locked = Meeting::query()
+                ->whereKey($meeting->id)
+                ->lockForUpdate()
+                ->first();
+
             if ($locked === null || $locked->status !== MeetingStatus::Reserved) {
                 throw MeetingStatusTransitionException::forCancel();
             }
@@ -248,6 +267,21 @@ class MeetingController extends Controller
                 'canceled_by_user_id' => $actor->id,
                 'canceled_at' => now(),
             ]);
+        });
+
+        DB::afterCommit(function () use ($meeting, $actor): void {
+            $recipient = $actor->id === $meeting->student_id
+                ? $meeting->coach
+                : $meeting->student;
+
+            if (
+                in_array($recipient->role, [UserRole::Student, UserRole::Coach], true)
+                && $recipient->status === UserStatus::InProgress
+            ) {
+                $recipient->notify(
+                    new MeetingCanceledNotification($meeting)
+                );
+            }
         });
 
         return redirect()
