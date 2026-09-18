@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\UseCases\Plan;
 
 use App\Enums\PlanStatus;
-use App\Enums\UserStatus;
 use App\Models\Plan;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 
 final class IndexAction
 {
@@ -33,11 +31,7 @@ final class IndexAction
         }
 
         return $query
-            ->withCount([
-                'users as users_count' => function (Builder $query): void {
-                    $query->where('status', UserStatus::InProgress);
-                },
-            ])
+            ->withCount('users')
             ->ordered()
             ->paginate($perPage)
             ->withQueryString();
