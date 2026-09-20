@@ -90,6 +90,12 @@ class Plan extends Model
      */
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('sort_order')->orderByDesc('created_at');
+        return $query
+            ->orderByRaw(
+                'CASE WHEN status = ? THEN 0 ELSE 1 END',
+                [PlanStatus::Published->value],
+            )
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at');
     }
 }

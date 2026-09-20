@@ -14,7 +14,9 @@ final class DestroyAction
     public function __invoke(Plan $plan): void
     {
         if ($plan->status !== PlanStatus::Draft) {
-            throw new PlanNotDeletableException;
+            throw new PlanNotDeletableException(
+                '下書きのプランのみ削除できます。削除する場合は下書きに変更してください。',
+            );
         }
 
         if ($plan->users()->exists() || $plan->userPlanLogs()->exists()) {
