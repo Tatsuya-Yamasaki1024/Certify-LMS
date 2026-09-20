@@ -76,6 +76,9 @@ class MeetingPack extends Model
      */
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('sort_order')->orderByDesc('created_at');
+        return $query
+            ->orderByRaw("CASE WHEN status = 'published' THEN 0 ELSE 1 END")
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at');
     }
 }

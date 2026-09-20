@@ -7,7 +7,6 @@ namespace App\UseCases\MeetingPack;
 use App\Enums\MeetingPackStatus;
 use App\Models\MeetingPack;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 
 final class IndexAction
 {
@@ -19,11 +18,7 @@ final class IndexAction
         $query = MeetingPack::query();
 
         if ($keyword !== null && $keyword !== '') {
-            $query->where(function (Builder $query) use ($keyword) {
-                $query
-                    ->where('name', 'like', '%'.$keyword.'%')
-                    ->orWhere('description', 'like', '%'.$keyword.'%');
-            });
+            $query->where('name', 'like', '%'.$keyword.'%');
         }
 
         if ($status !== null) {
