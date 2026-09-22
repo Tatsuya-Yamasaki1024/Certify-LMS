@@ -45,6 +45,7 @@ use App\Http\Controllers\SectionQuestionController;
 use App\Http\Controllers\SectionQuizController;
 use App\Http\Controllers\SectionQuizResultController;
 use App\Http\Controllers\Settings\AvailabilityController as SettingsAvailabilityController;
+use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SettingsDefaultEnrollmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeakDrillController;
@@ -129,6 +130,25 @@ Route::middleware(['auth', 'role:student', 'active-learning'])->group(function (
     Route::post('enrollments/{enrollment}/receive-certificate', [ReceiveCertificateController::class, 'store'])
         ->name('enrollments.receiveCertificate');
 });
+
+// ============================================================
+// 全ロール共通 設定ルート(プロフィール / パスワード)
+// ============================================================
+Route::middleware('auth')
+    ->prefix('settings')
+    ->name('settings.')
+    ->group(function () {
+        Route::get('profile', [ProfileController::class, 'edit'])
+            ->name('profile.edit');
+        Route::patch('profile', [ProfileController::class, 'update'])
+            ->name('profile.update');
+        Route::post('avatar', [ProfileController::class, 'storeAvatar'])
+            ->name('avatar.store');
+        Route::delete('avatar', [ProfileController::class, 'destroyAvatar'])
+            ->name('avatar.destroy');
+        Route::put('password', [ProfileController::class, 'updatePassword'])
+            ->name('password.update');
+    });
 
 // ============================================================
 // 受講生専用 設定ルート(デフォルト資格の永続変更)
