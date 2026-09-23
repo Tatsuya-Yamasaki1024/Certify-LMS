@@ -143,6 +143,12 @@ class Enrollment extends Model
         return $this->hasOne(LearningHourTarget::class);
     }
 
+    /** @return HasMany<EnrollmentNote, $this> */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(EnrollmentNote::class);
+    }
+
     /**
      * 受講登録に紐づく個人学習目標を取得する。
      *
