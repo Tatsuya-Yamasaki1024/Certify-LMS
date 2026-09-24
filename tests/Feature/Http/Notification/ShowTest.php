@@ -6,6 +6,7 @@ namespace Tests\Feature\Http\Notification;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ShowTest extends TestCase
@@ -19,7 +20,7 @@ class ShowTest extends TestCase
         $student = User::factory()->student()->inProgress()->create();
 
         $notification = $student->notifications()->create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'type' => 'App\Notifications\Announcement\AdminAnnouncementNotification',
             'data' => [
                 'notification_type' => 'admin_announcement',
@@ -47,7 +48,7 @@ class ShowTest extends TestCase
         $student = User::factory()->student()->inProgress()->create();
 
         $notification = $student->notifications()->create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'type' => 'App\Notifications\Announcement\AdminAnnouncementNotification',
             'data' => [
                 'notification_type' => 'admin_announcement',
@@ -74,7 +75,7 @@ class ShowTest extends TestCase
         $otherStudent = User::factory()->student()->inProgress()->create();
 
         $notification = $otherStudent->notifications()->create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'type' => 'App\Notifications\Announcement\AdminAnnouncementNotification',
             'data' => [
                 'notification_type' => 'admin_announcement',
