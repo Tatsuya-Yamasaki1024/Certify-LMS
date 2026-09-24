@@ -40,6 +40,22 @@ class NotificationController extends Controller
         ]);
     }
 
+    // 自分の通知を既読にし、通知詳細を表示する。
+    public function show(
+        Request $request,
+        DatabaseNotification $notification,
+    ): View {
+        $notification = $request->user()
+            ->notifications()
+            ->findOrFail($notification->id);
+
+        $notification->markAsRead();
+
+        return view('notifications.show', [
+            'notification' => $notification,
+        ]);
+    }
+
     // 自分の通知を既読にし、通知に紐づく画面へ遷移する。
     public function markAsRead(
         Request $request,
@@ -65,6 +81,10 @@ class NotificationController extends Controller
             'meeting_reserved', 'meeting_canceled' => redirect()->route(
                 'meetings.show',
                 $data['meeting_id'],
+            ),
+            'admin_announcement' => redirect()->route(
+                'notifications.show',
+                $notification,
             ),
             default => redirect()->route('notifications.index'),
         };
