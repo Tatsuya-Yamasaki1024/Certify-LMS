@@ -78,7 +78,7 @@ class NotificationController extends Controller
                 'qa-board.show',
                 $data['qa_thread_id'],
             ),
-            'meeting_reserved', 'meeting_canceled' => redirect()->route(
+            'meeting_reserved', 'meeting_canceled', 'meeting_reminder' => redirect()->route(
                 'meetings.show',
                 $data['meeting_id'],
             ),
