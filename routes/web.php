@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AdminQaReplyController;
 use App\Http\Controllers\AdminQaThreadController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CertificationCatalogController;
@@ -79,6 +80,8 @@ Route::middleware('auth')->group(function () {
     // 通知
     Route::get('notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
+    Route::get('notifications/{notification}', [NotificationController::class, 'show'])
+        ->name('notifications.show');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
         ->name('notifications.markAsRead');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])
@@ -293,6 +296,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     Route::delete('qa-board/{thread}/replies/{reply}', [AdminQaReplyController::class, 'destroy'])
         ->name('admin.qa-board.replies.destroy');
+
+    // お知らせ配信
+    Route::resource('announcements', AnnouncementController::class)
+        ->only(['index', 'show', 'create', 'store'])
+        ->names('admin.announcements');
 });
 
 // ============================================================
