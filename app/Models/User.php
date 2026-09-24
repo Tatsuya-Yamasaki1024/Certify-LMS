@@ -310,4 +310,14 @@ class User extends Authenticatable
     {
         return $query->whereIn('status', [UserStatus::InProgress, UserStatus::Graduated]);
     }
+
+    /**
+     * ユーザーへの面談リマインダー送信履歴を取得する。
+     *
+     * @return HasMany<MeetingReminderDelivery, $this>
+     */
+    public function meetingReminderDeliveries(): HasMany
+    {
+        return $this->hasMany(MeetingReminderDelivery::class);
+    }
 }

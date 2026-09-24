@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -129,5 +130,15 @@ class Meeting extends Model
     public function scopeForStudent(Builder $query, User $student): Builder
     {
         return $query->where('student_id', $student->id);
+    }
+
+    /**
+     * 面談リマインダーの送信履歴を取得する。
+     *
+     * @return HasMany<MeetingReminderDelivery, $this>
+     */
+    public function reminderDeliveries(): HasMany
+    {
+        return $this->hasMany(MeetingReminderDelivery::class);
     }
 }
