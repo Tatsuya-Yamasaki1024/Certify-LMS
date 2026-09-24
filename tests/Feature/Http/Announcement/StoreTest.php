@@ -37,7 +37,7 @@ class StoreTest extends TestCase
             ]);
 
         // Assert
-        $announcement = \App\Models\Announcement::query()
+        $announcement = Announcement::query()
             ->where('title', '運営からのお知らせ')
             ->firstOrFail();
 

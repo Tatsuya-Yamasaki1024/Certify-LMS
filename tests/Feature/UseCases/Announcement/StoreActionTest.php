@@ -148,7 +148,6 @@ class StoreActionTest extends TestCase
         );
     }
 
-
     // 全受講生を配信対象にした場合、招待中・卒業・退会済の受講生にはお知らせが配信されないことを確認する。
     public function test_only_in_progress_students_receive_announcement(): void
     {
