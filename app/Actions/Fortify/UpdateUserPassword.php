@@ -36,6 +36,7 @@ class UpdateUserPassword implements UpdatesUserPasswords
             'password.required' => '新しいパスワードを入力してください。',
             'password.string' => '新しいパスワードは文字列で入力してください。',
             'password.confirmed' => '新しいパスワードと確認用パスワードが一致しません。',
+            'password.min' => '新しいパスワードは8文字以上で入力してください。',
         ])->validateWithBag('updatePassword');
 
         $user->forceFill([

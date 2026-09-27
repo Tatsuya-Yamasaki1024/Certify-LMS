@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Http\Settings;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -357,5 +358,21 @@ class ProfileTest extends TestCase
         $this->assertTrue(
             Hash::check('old-password', $user->password)
         );
+    }
+
+    // 生徒のプロフィール画面には固定面談URLが表示されないことを確認する。
+    public function test_student_cannot_see_meeting_url(): void
+    {
+        $student = User::factory()->create([
+            'role' => UserRole::Student,
+            'meeting_url' => 'https://meet.google.com/student-test',
+        ]);
+
+        $response = $this->actingAs($student)
+            ->get(route('settings.profile.edit'));
+
+        $response->assertOk()
+            ->assertDontSee('固定面談 URL')
+            ->assertDontSee('https://meet.google.com/student-test');
     }
 }
