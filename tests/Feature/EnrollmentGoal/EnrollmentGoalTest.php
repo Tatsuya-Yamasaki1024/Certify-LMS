@@ -162,4 +162,80 @@ class EnrollmentGoalTest extends TestCase
             'id' => $goal->id,
         ]);
     }
+
+    /**
+     * コーチは個人学習目標を操作できない。
+     */
+    public function test_coach_cannot_operate_enrollment_goal(): void
+    {
+        $student = User::factory()->student()->create();
+        $coach = User::factory()->coach()->create();
+
+        $enrollment = Enrollment::factory()
+            ->for($student)
+            ->learning()
+            ->create();
+
+        $goal = EnrollmentGoal::factory()
+            ->for($enrollment)
+            ->create();
+
+        $this->actingAs($coach)
+            ->patch(route('enrollment-goals.update', $goal), [
+                'title' => '更新後の目標',
+                'description' => '更新後の説明',
+                'target_date' => now()->addMonth()->toDateString(),
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($coach)
+            ->delete(route('enrollment-goals.destroy', $goal))
+            ->assertForbidden();
+
+        $this->actingAs($coach)
+            ->post(route('enrollment-goals.markAchieved', $goal))
+            ->assertForbidden();
+
+        $this->actingAs($coach)
+            ->delete(route('enrollment-goals.unmarkAchieved', $goal))
+            ->assertForbidden();
+    }
+
+    /**
+     * Adminは個人学習目標を操作できない。
+     */
+    public function test_admin_cannot_operate_enrollment_goal(): void
+    {
+        $student = User::factory()->student()->create();
+        $admin = User::factory()->admin()->create();
+
+        $enrollment = Enrollment::factory()
+            ->for($student)
+            ->learning()
+            ->create();
+
+        $goal = EnrollmentGoal::factory()
+            ->for($enrollment)
+            ->create();
+
+        $this->actingAs($admin)
+            ->patch(route('enrollment-goals.update', $goal), [
+                'title' => '更新後の目標',
+                'description' => '更新後の説明',
+                'target_date' => now()->addMonth()->toDateString(),
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->delete(route('enrollment-goals.destroy', $goal))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('enrollment-goals.markAchieved', $goal))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->delete(route('enrollment-goals.unmarkAchieved', $goal))
+            ->assertForbidden();
+    }
 }

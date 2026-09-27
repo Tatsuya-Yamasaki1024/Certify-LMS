@@ -28,7 +28,8 @@ final class EnrollmentGoalController extends Controller
     ): RedirectResponse {
         $action($enrollment, $request->validated());
 
-        return to_route('enrollments.show', $enrollment);
+        return to_route('enrollments.show', $enrollment)
+            ->with('success', '個人学習目標を作成しました。');
     }
 
     /**
@@ -53,7 +54,8 @@ final class EnrollmentGoalController extends Controller
     ): RedirectResponse {
         $action($goal, $request->validated());
 
-        return to_route('enrollments.show', $goal->enrollment_id);
+        return to_route('enrollments.show', $goal->enrollment_id)
+            ->with('success', '個人学習目標を更新しました。');
     }
 
     /**
@@ -69,7 +71,8 @@ final class EnrollmentGoalController extends Controller
 
         $action($goal);
 
-        return to_route('enrollments.show', $enrollmentId);
+        return to_route('enrollments.show', $enrollmentId)
+            ->with('success', '個人学習目標を削除しました。');
     }
 
     /**
@@ -83,7 +86,8 @@ final class EnrollmentGoalController extends Controller
 
         $action($goal);
 
-        return to_route('enrollments.show', $goal->enrollment_id);
+        return to_route('enrollments.show', $goal->enrollment_id)
+            ->with('success', '個人学習目標を達成済みにしました。');
     }
 
     /**
@@ -97,6 +101,7 @@ final class EnrollmentGoalController extends Controller
 
         $action($goal);
 
-        return to_route('enrollments.show', $goal->enrollment_id);
+        return to_route('enrollments.show', $goal->enrollment_id)
+            ->with('success', '個人学習目標を未達成に戻しました。');
     }
 }
