@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\InvitationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\OnboardingRequest;
 use App\Models\Invitation;
@@ -18,6 +19,10 @@ class OnboardingController extends Controller
 {
     public function show(Request $request, Invitation $invitation, InvitationTokenService $tokenService): View
     {
+        if ($invitation->status === InvitationStatus::Accepted) {
+            abort(410);
+        }
+
         if (! $tokenService->verify($request, $invitation)) {
             return view('auth.invitation-invalid');
         }
