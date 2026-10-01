@@ -19,10 +19,6 @@ class OnboardingController extends Controller
 {
     public function show(Request $request, Invitation $invitation, InvitationTokenService $tokenService): View
     {
-        if ($invitation->status === InvitationStatus::Accepted) {
-            abort(410);
-        }
-
         if (! $tokenService->verify($request, $invitation)) {
             return view('auth.invitation-invalid');
         }
@@ -44,6 +40,10 @@ class OnboardingController extends Controller
         OnboardingRequest $request,
         OnboardAction $action,
     ): RedirectResponse {
+        if ($invitation->status === InvitationStatus::Accepted) {
+            abort(410);
+        }
+
         $action($invitation, $request->validated());
 
         return redirect()->route('dashboard.index');
