@@ -65,8 +65,8 @@ class SendMeetingRemindersCommand extends Command
 
             MeetingReminderType::OneHourBefore => $query
                 ->whereBetween('scheduled_at', [
-                    now()->startOfHour()->addHour(),
-                    now()->startOfHour()->addHour()->endOfHour(),
+                    now()->addMinutes(55),
+                    now()->addMinutes(65),
                 ])
                 ->orderBy('scheduled_at')
                 ->get(),

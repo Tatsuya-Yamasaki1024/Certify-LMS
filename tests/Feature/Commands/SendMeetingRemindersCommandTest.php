@@ -29,7 +29,7 @@ class SendMeetingRemindersCommandTest extends TestCase
             'status' => UserStatus::InProgress,
         ]);
 
-        $meeting = Meeting::factory()
+        Meeting::factory()
             ->reserved()
             ->forCoach($coach)
             ->forStudent($student)
@@ -65,12 +65,12 @@ class SendMeetingRemindersCommandTest extends TestCase
             'status' => UserStatus::InProgress,
         ]);
 
-        $meeting = Meeting::factory()
+        Meeting::factory()
             ->reserved()
             ->forCoach($coach)
             ->forStudent($student)
             ->create([
-                'scheduled_at' => now()->addHour()->setMinute(0),
+                'scheduled_at' => now()->addMinutes(60),
             ]);
 
         $this->artisan('notifications:send-meeting-reminders', [
@@ -116,8 +116,8 @@ class SendMeetingRemindersCommandTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    // 同じリマインダーを再実行しても二重送信されないことを確認する。
-    public function test_does_not_send_duplicate_reminder(): void
+    // 5分間隔で3回実行されても同じリマインダーが二重送信されないことを確認する。
+    public function test_does_not_send_duplicate_one_hour_before_reminder(): void
     {
         Notification::fake();
 
@@ -134,15 +134,25 @@ class SendMeetingRemindersCommandTest extends TestCase
             ->forCoach($coach)
             ->forStudent($student)
             ->create([
-                'scheduled_at' => now()->addDay()->setTime(10, 0),
+                'scheduled_at' => now()->addHour(),
             ]);
 
-        $this->artisan('notifications:send-meeting-reminders', [
-            '--window' => 'eve',
-        ])->assertSuccessful();
+        $this->travelTo($meeting->scheduled_at->copy()->subMinutes(65));
 
         $this->artisan('notifications:send-meeting-reminders', [
-            '--window' => 'eve',
+            '--window' => 'one_hour_before',
+        ])->assertSuccessful();
+
+        $this->travelTo($meeting->scheduled_at->copy()->subMinutes(60));
+
+        $this->artisan('notifications:send-meeting-reminders', [
+            '--window' => 'one_hour_before',
+        ])->assertSuccessful();
+
+        $this->travelTo($meeting->scheduled_at->copy()->subMinutes(55));
+
+        $this->artisan('notifications:send-meeting-reminders', [
+            '--window' => 'one_hour_before',
         ])->assertSuccessful();
 
         Notification::assertSentToTimes(
@@ -158,8 +168,8 @@ class SendMeetingRemindersCommandTest extends TestCase
         );
     }
 
-    // 対象時間外の面談にはリマインダーが送信されないことを確認する。
-    public function test_does_not_send_reminder_for_meeting_outside_window(): void
+    // 1時間前リマインダーの対象時間外の面談には送信されないことを確認する。
+    public function test_does_not_send_one_hour_before_reminder_for_meeting_outside_window(): void
     {
         Notification::fake();
 
@@ -176,11 +186,11 @@ class SendMeetingRemindersCommandTest extends TestCase
             ->forCoach($coach)
             ->forStudent($student)
             ->create([
-                'scheduled_at' => now()->addDays(2)->setTime(10, 0),
+                'scheduled_at' => now()->addMinutes(10),
             ]);
 
         $this->artisan('notifications:send-meeting-reminders', [
-            '--window' => 'eve',
+            '--window' => 'one_hour_before',
         ])->assertSuccessful();
 
         Notification::assertNothingSent();
