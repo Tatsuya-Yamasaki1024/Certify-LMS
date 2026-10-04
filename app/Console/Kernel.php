@@ -38,7 +38,7 @@ class Kernel extends ConsoleKernel
 
         // 面談1時間前にリマインダーを送信
         $schedule->command('notifications:send-meeting-reminders --window=one_hour_before')
-            ->hourly()
+            ->cron('*/5 * * * *')
             ->withoutOverlapping(5);
     }
 
