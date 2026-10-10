@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Notifications\Meeting\MeetingCanceledNotification;
 use App\Notifications\Meeting\MeetingReservedNotification;
 use App\Services\CoachMeetingLoadService;
+use App\Services\GoogleCalendarService;
 use App\Services\MeetingAvailabilityService;
 use App\Services\MeetingQuotaService;
 use App\UseCases\MeetingQuota\ConsumeQuotaAction;
@@ -35,6 +36,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -171,6 +173,7 @@ class MeetingController extends Controller
         CoachMeetingLoadService $coachLoadService,
         MeetingQuotaService $quotaService,
         ConsumeQuotaAction $consumeAction,
+        GoogleCalendarService $googleCalendarService,
     ): RedirectResponse {
         $scheduledAt = Carbon::parse($request->validated('scheduled_at'));
         $topic = $request->validated('topic');
@@ -185,6 +188,7 @@ class MeetingController extends Controller
             $coachLoadService,
             $quotaService,
             $consumeAction,
+            $googleCalendarService,
         ) {
             if ($quotaService->remaining($student) < 1) {
                 throw new InsufficientMeetingQuotaException;
@@ -192,7 +196,12 @@ class MeetingController extends Controller
 
             $availabilityService->validateSlot($enrollment->certification, $scheduledAt);
 
-            $candidates = $this->findAvailableCoaches($enrollment->certification, $scheduledAt);
+            $candidates = $this->findAvailableCoaches(
+                $enrollment->certification,
+                $scheduledAt,
+                $googleCalendarService,
+            );
+
             if ($candidates->isEmpty()) {
                 throw new MeetingNoAvailableCoachException;
             }
@@ -210,7 +219,6 @@ class MeetingController extends Controller
                     'meeting_url_snapshot' => $coach->meeting_url,
                 ]);
             } catch (UniqueConstraintViolationException $e) {
-                // 同時刻に他受講生が先行予約した race condition: UNIQUE(coach_id, scheduled_at) で弾かれた
                 throw new MeetingNoAvailableCoachException($e);
             }
 
@@ -219,6 +227,32 @@ class MeetingController extends Controller
 
             return $meeting->fresh();
         });
+
+        $coach = $meeting->coach;
+        $credential = $coach->googleCredential;
+
+        if ($credential !== null) {
+            try {
+                $googleEventId = $googleCalendarService->createEvent(
+                    $credential,
+                    $meeting->student->name,
+                    $meeting->enrollment->certification->name,
+                    $meeting->topic,
+                    $meeting->meeting_url_snapshot,
+                    $meeting->scheduled_at,
+                );
+
+                $meeting->update([
+                    'google_event_id' => $googleEventId,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to create Google Calendar event.', [
+                    'meeting_id' => $meeting->id,
+                    'coach_id' => $coach->id,
+                    'exception' => $e,
+                ]);
+            }
+        }
 
         DB::afterCommit(function () use ($meeting): void {
             $coach = $meeting->coach;
@@ -243,6 +277,7 @@ class MeetingController extends Controller
     public function cancel(
         Meeting $meeting,
         RefundQuotaAction $refundAction,
+        GoogleCalendarService $googleCalendarService,
     ): RedirectResponse {
         $this->authorize('cancel', $meeting);
 
@@ -270,6 +305,25 @@ class MeetingController extends Controller
 
             $refundAction($locked->student, $locked->id);
         });
+
+        $coach = $meeting->coach;
+        $credential = $coach->googleCredential;
+
+        if ($credential !== null && $meeting->google_event_id !== null) {
+            try {
+                $googleCalendarService->deleteEvent(
+                    $credential,
+                    $meeting->google_event_id,
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Failed to delete Google Calendar event.', [
+                    'meeting_id' => $meeting->id,
+                    'coach_id' => $coach->id,
+                    'google_event_id' => $meeting->google_event_id,
+                    'exception' => $e,
+                ]);
+            }
+        }
 
         DB::afterCommit(function () use ($meeting, $actor): void {
             $recipient = $actor->id === $meeting->student_id
@@ -341,11 +395,14 @@ class MeetingController extends Controller
      *
      * @return Collection<int, User>
      */
-    private function findAvailableCoaches(Certification $certification, Carbon $scheduledAt): Collection
-    {
+    private function findAvailableCoaches(
+        Certification $certification,
+        Carbon $scheduledAt,
+        GoogleCalendarService $googleCalendarService,
+    ): Collection {
         $time = $scheduledAt->format('H:i:s');
 
-        return $certification->coaches()
+        $coaches = $certification->coaches()
             ->whereHas('coachAvailabilities', function ($q) use ($scheduledAt, $time) {
                 $q->where('day_of_week', $scheduledAt->dayOfWeek)
                     ->where('is_active', true)
@@ -356,6 +413,32 @@ class MeetingController extends Controller
                 $q->where('scheduled_at', $scheduledAt)
                     ->whereIn('status', [MeetingStatus::Reserved->value, MeetingStatus::Completed->value]);
             })
+            ->with('googleCredential')
             ->get();
+
+        return $coaches->filter(function (User $coach) use ($scheduledAt, $googleCalendarService): bool {
+            $credential = $coach->googleCredential;
+
+            if ($credential === null) {
+                return true;
+            }
+
+            try {
+                $busyIntervals = $googleCalendarService->busyIntervals(
+                    $credential,
+                    $scheduledAt,
+                    $scheduledAt->copy()->addHour(),
+                );
+            } catch (\Throwable $e) {
+                return true;
+            }
+
+            $slotEnd = $scheduledAt->copy()->addHour();
+
+            return ! collect($busyIntervals)->contains(
+                fn (array $busy): bool => $busy['start']->lt($slotEnd)
+                    && $busy['end']->gt($scheduledAt),
+            );
+        })->values();
     }
 }
