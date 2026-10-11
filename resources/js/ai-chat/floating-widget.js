@@ -39,6 +39,7 @@ export function initAiChatWidget() {
 
     const sectionId = widget.dataset.sectionId || null;
     const storeUrl = widget.dataset.storeUrl;
+    const findSectionUrl = '/ai-chat/conversations/section';
     const fullscreenBase = widget.dataset.fullscreenBaseUrl;
 
     // 初期 welcome 要素 (Blade で出力された「ウェルカム文 + サジェスト」) を clone して保存。
@@ -249,8 +250,9 @@ export function initAiChatWidget() {
     }
 
     async function ensureConversation() {
-        if (currentConversationId) return currentConversationId;
+        await conversationLookupPromise;
 
+        if (currentConversationId) return currentConversationId;
         const body = {
             source: 'widget',
         };
@@ -335,9 +337,44 @@ export function initAiChatWidget() {
     const newBtn = widget.querySelector('[data-ai-chat-new]');
     newBtn?.addEventListener('click', () => startNewConversation());
 
-    // sessionStorage に conversation_id があれば、開時に過去メッセージを復元 (Widget とサイドバーの表示一貫)
+    // 保存済みの会話があれば履歴を復元し、なければ同じ Section の既存会話を検索する。
+    let conversationLookupPromise = Promise.resolve();
+
     if (currentConversationId) {
-        loadConversationHistory(currentConversationId);
+        conversationLookupPromise = loadConversationHistory(currentConversationId);
+    } else if (sectionId) {
+        conversationLookupPromise = (async () => {
+            try {
+                const url = new URL(findSectionUrl, window.location.origin);
+                url.searchParams.set('section_id', sectionId);
+
+                const res = await fetch(url, {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!res.ok) return;
+
+                const data = await res.json();
+                const conversationId = data?.conversation?.id;
+
+                if (!conversationId || currentConversationId) return;
+
+                currentConversationId = conversationId;
+
+                try {
+                    sessionStorage.setItem(STORAGE_CONV, conversationId);
+                    sessionStorage.setItem(STORAGE_CONV_SECTION, sectionId);
+                } catch (e) {}
+
+                await loadConversationHistory(conversationId);
+            } catch (e) {
+                // 検索に失敗しても、メッセージ送信時に既存の会話取得処理を利用できるようにする。
+            }
+        })();
     }
 
     document.addEventListener('keydown', (e) => {
