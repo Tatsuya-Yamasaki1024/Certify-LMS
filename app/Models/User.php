@@ -198,6 +198,16 @@ class User extends Authenticatable
     }
 
     /**
+     * 受講生本人の追加面談購入記録を取得する。
+     *
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * @return HasMany<MeetingQuotaTransaction, $this>
      */
     public function meetingQuotaTransactions(): HasMany

@@ -51,9 +51,9 @@
             <x-alert type="warning">
                 <x-slot:title>残面談回数が不足しています</x-slot:title>
                 <div class="mt-1 text-sm">面談を予約するには、追加面談を購入してください。</div>
-                @if (Route::has('meeting-quota.checkout.select'))
+                @if (Route::has('meeting-quota.checkout.index'))
                     <div class="mt-3">
-                        <x-link-button href="{{ route('meeting-quota.checkout.select') }}" variant="primary">追加面談を購入する</x-link-button>
+                        <x-link-button href="{{ route('meeting-quota.checkout.index') }}" variant="primary">追加面談を購入する</x-link-button>
                     </div>
                 @endif
             </x-alert>

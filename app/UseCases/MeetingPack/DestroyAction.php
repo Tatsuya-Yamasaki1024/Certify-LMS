@@ -13,10 +13,20 @@ final class DestroyAction
 {
     public function __invoke(MeetingPack $meetingPack): void
     {
-        if ($meetingPack->status === MeetingPackStatus::Published) {
-            throw new MeetingPackNotDeletableException;
-        }
+        DB::transaction(function () use ($meetingPack): void {
+            $lockedPack = MeetingPack::query()
+                ->whereKey($meetingPack->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        DB::transaction(fn () => $meetingPack->delete());
+            if (
+                $lockedPack->status === MeetingPackStatus::Published
+                || $lockedPack->payments()->exists()
+            ) {
+                throw new MeetingPackNotDeletableException;
+            }
+
+            $lockedPack->delete();
+        });
     }
 }

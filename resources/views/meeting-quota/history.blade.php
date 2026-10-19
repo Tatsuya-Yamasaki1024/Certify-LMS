@@ -34,8 +34,8 @@
                 <span class="font-semibold text-ink-900 tabular-nums">{{ $remaining }} 回</span>
             </p>
         </div>
-        @if (Route::has('meeting-quota.checkout.select'))
-            <x-link-button href="{{ route('meeting-quota.checkout.select') }}" variant="primary">
+        @if (Route::has('meeting-quota.checkout.index'))
+            <x-link-button href="{{ route('meeting-quota.checkout.index') }}" variant="primary">
                 <x-icon name="plus" class="w-4 h-4" />
                 追加面談を購入
             </x-link-button>

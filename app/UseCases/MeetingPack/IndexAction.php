@@ -26,6 +26,7 @@ final class IndexAction
         }
 
         return $query
+            ->withCount('payments')
             ->ordered()
             ->paginate($perPage)
             ->withQueryString();
