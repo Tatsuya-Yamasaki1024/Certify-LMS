@@ -31,8 +31,8 @@
             <span class="ml-1.5 font-display text-xl font-bold text-primary-700 tabular-nums">{{ $meetingsRemaining }}</span>
             <span class="text-xs text-ink-500">回</span>
         </div>
-        @if (Route::has('meeting-quota.checkout.select'))
-            <a href="{{ route('meeting-quota.checkout.select') }}" class="text-xs text-primary-700 hover:underline whitespace-nowrap">
+        @if (Route::has('meeting-quota.checkout.index'))
+            <a href="{{ route('meeting-quota.checkout.index') }}" class="text-xs text-primary-700 hover:underline whitespace-nowrap">
                 追加購入 →
             </a>
         @endif

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Http\MeetingPack;
 
 use App\Models\MeetingPack;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -45,6 +46,60 @@ class DestroyTest extends TestCase
         $response->assertRedirect();
 
         $this->assertDatabaseMissing('meeting_packs', [
+            'id' => $meetingPack->id,
+        ]);
+    }
+
+    // 購入履歴がある下書きの面談パックは削除できない
+    public function test_admin_cannot_delete_draft_meeting_pack_with_payment_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $meetingPack = MeetingPack::factory()
+            ->draft()
+            ->create();
+
+        Payment::factory()->create([
+            'meeting_pack_id' => $meetingPack->id,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.meeting-packs.destroy', $meetingPack));
+
+        $response->assertRedirect();
+        $response->assertSessionHas(
+            'error',
+            '公開中、または購入履歴がある面談パックは削除できません。',
+        );
+
+        $this->assertDatabaseHas('meeting_packs', [
+            'id' => $meetingPack->id,
+        ]);
+    }
+
+    // 購入履歴があるアーカイブ済みの面談パックは削除できない
+    public function test_admin_cannot_delete_archived_meeting_pack_with_payment_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $meetingPack = MeetingPack::factory()
+            ->archived()
+            ->create();
+
+        Payment::factory()->create([
+            'meeting_pack_id' => $meetingPack->id,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.meeting-packs.destroy', $meetingPack));
+
+        $response->assertRedirect();
+        $response->assertSessionHas(
+            'error',
+            '公開中、または購入履歴がある面談パックは削除できません。',
+        );
+
+        $this->assertDatabaseHas('meeting_packs', [
             'id' => $meetingPack->id,
         ]);
     }

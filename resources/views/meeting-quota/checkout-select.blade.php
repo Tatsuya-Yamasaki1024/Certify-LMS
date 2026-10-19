@@ -18,7 +18,7 @@
         <div>
             <h1 class="text-2xl font-bold text-ink-900">追加面談の購入</h1>
             <p class="text-sm text-ink-500 mt-1">
-                希望のパックを選んで決済画面へ進んでください。決済完了で残面談回数が即時加算されます。
+                希望のパックを選んで決済画面へ進んでください。残面談回数は決済確定後に反映されます。
             </p>
         </div>
         <a href="{{ route('meeting-quota.history') }}" class="text-sm text-primary-700 hover:underline shrink-0 whitespace-nowrap">面談回数履歴 &rarr;</a>
@@ -62,7 +62,7 @@
         </div>
 
         <p class="text-xs text-ink-500 mt-6">
-            決済処理は Stripe で安全に行われます。決済完了後、自動的に残面談回数へ反映されます(数秒〜数十秒の遅延が生じる場合があります)。
+            決済処理は Stripe で行われます。残面談回数は決済確定後に自動反映されます。反映まで時間がかかる場合があります。
         </p>
     @endif
 @endsection

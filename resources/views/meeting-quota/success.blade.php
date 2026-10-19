@@ -5,7 +5,7 @@
 --}}
 @extends('layouts.app')
 
-@section('title', 'お支払い完了')
+@section('title', '決済状況')
 
 @section('content')
     <div class="max-w-xl mx-auto mt-8">
@@ -13,10 +13,10 @@
             <div class="mx-auto w-16 h-16 rounded-full bg-success-50 text-success-600 flex items-center justify-center">
                 <x-icon name="check-circle" variant="solid" class="w-10 h-10" />
             </div>
-            <h1 class="text-xl font-bold text-ink-900 mt-4">お支払いが完了しました</h1>
+            <h1 class="text-xl font-bold text-ink-900 mt-4">決済情報を受け付けました</h1>
             <p class="text-sm text-ink-600 mt-2">
-                ご購入ありがとうございます。決済が確定次第、残面談回数へ自動的に加算されます。
-                反映までに数秒〜数十秒の遅延が生じることがあります。
+                ご購入手続きを受け付けました。残面談回数は決済確定後に反映されます。
+                反映まで時間がかかる場合があります。
             </p>
 
             @if ($payment)
