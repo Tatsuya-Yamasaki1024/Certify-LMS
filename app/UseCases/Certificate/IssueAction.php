@@ -4,28 +4,35 @@ declare(strict_types=1);
 
 namespace App\UseCases\Certificate;
 
+use App\Contracts\Certificates\CertificatePdfGenerator;
 use App\Enums\EnrollmentStatus;
 use App\Exceptions\Certification\CertificateAlreadyIssuedException;
 use App\Exceptions\Certification\EnrollmentNotPassedException;
 use App\Models\Certificate;
 use App\Models\Enrollment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
- * 修了証を発行するユースケース。受講生自己発火型の修了処理 `\App\UseCases\Enrollment\ReceiveCertificateAction` から呼び出される。
+ * 修了証を発行するユースケース。
  *
- * 業務分岐:
- * - Enrollment が `status=passed` + `passed_at != null` でない: EnrollmentNotPassedException（409）
- * - 同一 Enrollment に対する二重呼出: CertificateAlreadyIssuedException（409、事前 lockForUpdate + exists で検出）
- *
- * 修了証レコードの INSERT は `DB::transaction()` 内で実行する。
+ * Certificateレコードの作成とPDF生成を一体として扱い、
+ * PDF生成に失敗した場合はDB変更をロールバックする。
  */
 final class IssueAction
 {
+    public function __construct(
+        private readonly CertificatePdfGenerator $pdfService,
+    ) {}
+
     /**
+     * 修了証を発行する。
+     *
      * @throws EnrollmentNotPassedException 受講登録が修了状態ではない
-     * @throws CertificateAlreadyIssuedException 同一 Enrollment で修了証が既発行
+     * @throws CertificateAlreadyIssuedException 同一Enrollmentで修了証が既発行
+     * @throws Throwable PDF生成または保存に失敗した場合
      */
     public function __invoke(Enrollment $enrollment): Certificate
     {
@@ -33,24 +40,39 @@ final class IssueAction
             throw new EnrollmentNotPassedException;
         }
 
-        return DB::transaction(function () use ($enrollment) {
-            // 二重発行ガード: lockForUpdate で同時呼出を直列化し、enrollment_id UNIQUE 違反を例外メッセージ判別ではなく事前 SELECT で確定検出する
-            $existing = Certificate::query()
-                ->where('enrollment_id', $enrollment->id)
-                ->lockForUpdate()
-                ->first();
+        $path = 'certificates/'.Str::ulid().'.pdf';
 
-            if ($existing !== null) {
-                throw new CertificateAlreadyIssuedException;
+        try {
+            return DB::transaction(function () use ($enrollment, $path) {
+                $existing = Certificate::query()
+                    ->where('enrollment_id', $enrollment->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing !== null) {
+                    throw new CertificateAlreadyIssuedException;
+                }
+
+                $certificate = Certificate::create([
+                    'user_id' => $enrollment->user_id,
+                    'enrollment_id' => $enrollment->id,
+                    'certification_id' => $enrollment->certification_id,
+                    'pdf_path' => $path,
+                    'issued_at' => now(),
+                ]);
+
+                $this->pdfService->generate($certificate);
+
+                return $certificate;
+            });
+        } catch (Throwable $exception) {
+            try {
+                Storage::disk('private')->delete($path);
+            } catch (Throwable) {
+                // 元の例外を維持する。
             }
 
-            return Certificate::create([
-                'user_id' => $enrollment->user_id,
-                'enrollment_id' => $enrollment->id,
-                'certification_id' => $enrollment->certification_id,
-                'pdf_path' => 'certificates/'.Str::ulid().'.pdf',
-                'issued_at' => now(),
-            ]);
-        });
+            throw $exception;
+        }
     }
 }
