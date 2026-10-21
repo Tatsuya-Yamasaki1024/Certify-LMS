@@ -73,6 +73,7 @@ final class CheckoutController extends Controller
                 'status' => PaymentStatus::Pending,
                 'amount' => $lockedPack->price,
                 'quantity' => 1,
+                'meeting_count' => $lockedPack->meeting_count,
             ]);
         });
 
