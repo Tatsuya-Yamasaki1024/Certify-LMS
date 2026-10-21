@@ -239,7 +239,7 @@ final class StripeWebhookController extends Controller
         MeetingQuotaTransaction::query()->create([
             'user_id' => $payment->user_id,
             'type' => MeetingQuotaTransactionType::Purchased,
-            'amount' => $meetingPack->meeting_count * $payment->quantity,
+            'amount' => $payment->meeting_count * $payment->quantity,
             'related_payment_id' => $payment->id,
             'note' => "面談パック購入: {$meetingPack->name}",
             'occurred_at' => now(),

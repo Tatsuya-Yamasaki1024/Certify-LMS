@@ -26,6 +26,7 @@ class Payment extends Model
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
         'paid_at',
+        'meeting_count',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class Payment extends Model
         'amount' => 'integer',
         'quantity' => 'integer',
         'paid_at' => 'datetime',
+        'meeting_count' => 'integer',
     ];
 
     /**

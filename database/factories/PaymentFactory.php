@@ -26,6 +26,8 @@ class PaymentFactory extends Factory
             'stripe_checkout_session_id' => null,
             'stripe_payment_intent_id' => null,
             'paid_at' => null,
+            'meeting_count' => fn (array $attributes) => MeetingPack::query()
+                ->find($attributes['meeting_pack_id'])?->meeting_count ?? 1,
         ];
     }
 

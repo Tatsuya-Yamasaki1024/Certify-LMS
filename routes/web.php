@@ -626,7 +626,7 @@ Route::middleware(['auth', 'role:coach'])
         Route::delete('/', [GoogleCalendarController::class, 'destroy'])->name('destroy');
     });
 
-Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+Route::post('/webhooks/stripe', StripeWebhookController::class)->name('stripe.webhook');
 
 // ============================================================
 // 受講生専用ルート(受講中=in_progress のみ通過)
