@@ -9,11 +9,11 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\TermType;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
-use App\Models\Certificate;
 use App\Models\Certification;
 use App\Models\Enrollment;
 use App\Models\EnrollmentStatusLog;
 use App\Models\User;
+use Database\Seeders\Concerns\IssuesCertificatesWithPdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -37,6 +37,8 @@ use Illuminate\Support\Carbon;
  */
 final class EnrollmentSeeder extends Seeder
 {
+    use IssuesCertificatesWithPdf;
+
     public function run(): void
     {
         $publishedCertifications = Certification::query()
@@ -246,14 +248,6 @@ final class EnrollmentSeeder extends Seeder
      */
     private function issueCertificate(Enrollment $enrollment, ?Carbon $passedAt): void
     {
-        if (Certificate::query()->where('enrollment_id', $enrollment->id)->exists()) {
-            return;
-        }
-
-        $certificate = Certificate::factory()
-            ->forEnrollment($enrollment)
-            ->create([
-                'issued_at' => $passedAt ?? now(),
-            ]);
+        $this->issueCertificateWithPdf($enrollment, $passedAt);
     }
 }

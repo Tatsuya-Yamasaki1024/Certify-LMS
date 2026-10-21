@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\Certificates\CertificatePdfGenerator;
+use App\Services\CertificatePdfService;
 use App\View\Composers\EnrollmentSwitcherComposer;
 use App\View\Composers\NotificationBadgeComposer;
 use App\View\Composers\SectionPageMetaComposer;
@@ -15,7 +17,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(
+            CertificatePdfGenerator::class,
+            CertificatePdfService::class,
+        );
     }
 
     public function boot(): void
