@@ -437,6 +437,25 @@ final class AiChatConversationController extends Controller
                     'exception' => $exception::class,
                     'message' => $exception->getMessage(),
                 ]);
+
+                $firstQuestion = $conversation->messages()
+                    ->where('role', AiChatMessageRole::User->value)
+                    ->where('status', AiChatMessageStatus::Completed->value)
+                    ->orderBy('created_at')
+                    ->orderBy('id')
+                    ->value('content');
+
+                if ($firstQuestion !== null) {
+                    $fallbackTitle = mb_substr(trim($firstQuestion), 0, 40);
+
+                    AiChatConversation::query()
+                        ->whereKey($conversation->id)
+                        ->where('title', '新しい会話')
+                        ->where('title_manually_edited', false)
+                        ->update([
+                            'title' => $fallbackTitle,
+                        ]);
+                }
             }
         }
 

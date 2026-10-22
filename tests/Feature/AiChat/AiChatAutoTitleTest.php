@@ -148,7 +148,7 @@ class AiChatAutoTitleTest extends TestCase
         Http::assertSentCount(1);
     }
 
-    // タイトル生成に失敗してもAI回答は保存され、元のタイトルが維持される。
+    // タイトル生成に失敗してもAI回答は保存され、最初の質問文が仮タイトルになる。
     public function test_title_generation_failure_does_not_fail_chat(): void
     {
         Http::fake([
@@ -171,8 +171,7 @@ class AiChatAutoTitleTest extends TestCase
             )
             ->assertOk()
             ->assertJsonPath('assistant_message.content', '正常な回答')
-            ->assertJsonPath('conversation.title', '新しい会話');
-
+            ->assertJsonPath('conversation.title', '質問です');
         $this->assertDatabaseHas('ai_chat_messages', [
             'conversation_id' => $conversation->id,
             'role' => 'assistant',
