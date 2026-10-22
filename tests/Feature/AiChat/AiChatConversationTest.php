@@ -40,29 +40,43 @@ class AiChatConversationTest extends TestCase
     }
 
     /**
-     * Gemini の回答を保存し、初回メッセージから会話タイトルを設定する。
+     * Gemini の回答を保存し、AI が生成したタイトルを会話に設定する。
      */
+    // 回答生成とタイトル生成を別々に呼び出し、生成されたタイトルが保存されることを確認する。
     public function test_message_is_sent_to_gemini_and_conversation_is_auto_titled(): void
     {
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    [
-                        'content' => [
-                            'parts' => [
-                                ['text' => '回答です。'],
+            'generativelanguage.googleapis.com/*' => Http::sequence()
+                ->push([
+                    'candidates' => [
+                        [
+                            'content' => [
+                                'parts' => [
+                                    ['text' => '回答です。'],
+                                ],
                             ],
                         ],
                     ],
-                ],
-                'usageMetadata' => [
-                    'promptTokenCount' => 10,
-                    'candidatesTokenCount' => 5,
-                ],
-            ]),
+                    'usageMetadata' => [
+                        'promptTokenCount' => 10,
+                        'candidatesTokenCount' => 5,
+                    ],
+                ])
+                ->push([
+                    'candidates' => [
+                        [
+                            'content' => [
+                                'parts' => [
+                                    ['text' => 'Laravelのルーティング'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]),
         ]);
 
         $student = User::factory()->student()->inProgress()->create();
+
         $conversation = AiChatConversation::query()->create([
             'user_id' => $student->id,
             'title' => '新しい会話',
@@ -76,7 +90,7 @@ class AiChatConversationTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('user_message.content', 'Laravelのルーティングについて教えてください')
             ->assertJsonPath('assistant_message.content', '回答です。')
-            ->assertJsonPath('conversation.title', 'Laravelのルーティングについて教えてください');
+            ->assertJsonPath('conversation.title', 'Laravelのルーティング');
 
         $this->assertDatabaseHas('ai_chat_messages', [
             'conversation_id' => $conversation->id,
@@ -93,10 +107,25 @@ class AiChatConversationTest extends TestCase
             'output_tokens' => 5,
         ]);
 
+        $this->assertDatabaseHas('ai_chat_conversations', [
+            'id' => $conversation->id,
+            'title' => 'Laravelのルーティング',
+            'title_manually_edited' => false,
+        ]);
+
+        Http::assertSentCount(2);
+
         Http::assertSent(
             fn (Request $request): bool => str_contains($request->url(), 'gemini-2.5-flash-lite:generateContent')
                 && $request['contents'][0]['role'] === 'user'
                 && $request['contents'][0]['parts'][0]['text'] === 'Laravelのルーティングについて教えてください'
+        );
+
+        Http::assertSent(
+            fn (Request $request): bool => str_contains(
+                $request['systemInstruction']['parts'][0]['text'] ?? '',
+                'タイトル生成担当'
+            )
         );
     }
 

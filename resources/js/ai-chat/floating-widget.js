@@ -154,6 +154,9 @@ export function initAiChatWidget() {
     }
 
     function describeError(err) {
+        if (err?.type === 'unavailable') {
+            return 'AIチャットは現在利用できません。管理者にお問い合わせください。';
+        }
         if (err?.type === 'rate-limit') return '本日の利用上限に達しました。明日 0:00 以降に再度ご利用ください。';
         if (err?.type === 'llm') {
             const upstream = err.upstreamStatus;
@@ -311,10 +314,18 @@ export function initAiChatWidget() {
                     appendAssistantBubble(describeError(err), { isError: true });
                 },
             });
-            await client.sendSync(content);
+            const succeeded = await client.sendSync(content);
+
+            if (!succeeded && !input.value.trim()) {
+                input.value = content;
+            }
         } catch (err) {
             typingNode.remove();
             appendAssistantBubble('送信に失敗しました。', { isError: true });
+
+            if (!input.value.trim()) {
+                input.value = content;
+            }
         } finally {
             sendBtn.disabled = false;
             input.disabled = false;
@@ -333,9 +344,23 @@ export function initAiChatWidget() {
         }
     });
 
-    // 「新しい相談」ボタン: 現在の会話を破棄して新規会話開始の状態に戻す
+    // Section内では既存会話を再表示し、Section外では新しい相談を開始する
     const newBtn = widget.querySelector('[data-ai-chat-new]');
-    newBtn?.addEventListener('click', () => startNewConversation());
+    newBtn?.addEventListener('click', async () => {
+        if (!sectionId) {
+            startNewConversation();
+            return;
+        }
+
+        await conversationLookupPromise;
+
+        messagesEl.innerHTML = '';
+        renderWelcomeMessage();
+
+        if (currentConversationId) {
+            await loadConversationHistory(currentConversationId);
+        }
+    });
 
     // 保存済みの会話があれば履歴を復元し、なければ同じ Section の既存会話を検索する。
     let conversationLookupPromise = Promise.resolve();

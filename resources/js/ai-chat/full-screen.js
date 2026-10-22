@@ -130,7 +130,26 @@ function initForm() {
         scrollToBottom();
 
         try {
-            await client.sendSync(content);
+            const succeeded = await client.sendSync(content);
+
+            if (!succeeded && !textarea.value.trim()) {
+                textarea.value = content;
+                autoResize();
+            }
+        } catch (error) {
+            if (!textarea.value.trim()) {
+                textarea.value = content;
+                autoResize();
+            }
+
+            clearTyping();
+            renderFullScreenMessage(list, {
+                id: 'tmp-error-' + Date.now(),
+                role: 'assistant',
+                content: '通信に失敗しました。時間をおいて再度お試しください。',
+                status: 'error',
+                created_at: new Date().toISOString(),
+            }, { viewerName });
         } finally {
             submit.disabled = false;
             clearTyping();
@@ -142,6 +161,9 @@ function initForm() {
 }
 
 function describeError(err) {
+    if (err.type === 'unavailable') {
+        return 'AIチャットは現在利用できません。管理者にお問い合わせください。';
+    }
     if (err.type === 'rate-limit') return '本日の利用上限に達しました。明日 0:00 以降に再度ご利用ください。';
     if (err.type === 'validation') return '入力内容を確認してください (1-2000 文字)。';
     if (err.type === 'llm') {

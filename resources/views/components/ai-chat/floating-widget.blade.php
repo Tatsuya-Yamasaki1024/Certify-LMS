@@ -69,11 +69,15 @@
             <div class="ml-auto flex gap-1">
                 <button type="button"
                     data-ai-chat-new
-                    aria-label="新しい相談を始める"
-                    title="新しい相談を始める"
+                    aria-label="{{ !empty($sectionId) ? '会話を再表示' : '新しい相談を始める' }}"
+                    title="{{ !empty($sectionId) ? '会話を再表示' : '新しい相談を始める' }}"
                     class="w-[30px] h-[30px] rounded-[9px] bg-white/40 hover:bg-white/75 text-ink-900 inline-flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        @if (!empty($sectionId))
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>
+                        @else
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        @endif
                     </svg>
                 </button>
                 <button type="button"

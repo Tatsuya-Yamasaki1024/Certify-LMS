@@ -97,4 +97,30 @@ class GeminiService
                 : null,
         ];
     }
+
+    /**
+     * 会話内容からタイトルを生成する。
+     *
+     * @param array<int, array{role: string, parts: array<int, array{text: string}>}> $contents
+     */
+    public function generateTitle(array $contents): string
+    {
+        $result = $this->generate(
+            'あなたは学習相談チャットのタイトル生成担当です。'
+                .'会話の主題を表す簡潔な日本語タイトルを40文字以内で作成してください。'
+                .'タイトルのみを返し、説明・引用符・改行は含めないでください。',
+            $contents,
+        );
+
+        $title = trim($result['content']);
+        $title = trim($title, " \t\n\r\0\x0B\"'「」");
+
+        $title = mb_substr($title, 0, 40);
+
+        if ($title === '') {
+            throw new RuntimeException('Gemini API からタイトルを取得できませんでした。');
+        }
+
+        return $title;
+    }
 }

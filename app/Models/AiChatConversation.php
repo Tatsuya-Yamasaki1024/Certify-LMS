@@ -21,11 +21,13 @@ class AiChatConversation extends Model
         'enrollment_id',
         'section_id',
         'title',
+        'title_manually_edited',
         'last_message_at',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
+        'title_manually_edited' => 'boolean',
     ];
 
     /**

@@ -644,7 +644,7 @@ Route::middleware(['auth', 'role:student', 'active-learning'])->prefix('meeting-
 // ============================================================
 // 受講生専用ルート — AI チャット
 // ============================================================
-Route::middleware(['auth', 'role:student', 'active-learning'])
+Route::middleware(['auth', 'role:student', 'active-learning', 'ai-chat.enabled'])
     ->prefix('ai-chat')
     ->name('ai-chat.')
     ->group(function () {

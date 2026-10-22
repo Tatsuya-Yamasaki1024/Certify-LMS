@@ -30,7 +30,7 @@ export class AiChatClient {
     async sendSync(content) {
         if (!this.storeUrl) {
             this.onError({ type: 'config', message: 'storeUrl が未設定です' });
-            return;
+            return false;
         }
 
         const response = await fetch(this.storeUrl, {
@@ -47,21 +47,31 @@ export class AiChatClient {
 
         if (response.status === 429) {
             this.onError({ type: 'rate-limit', status: 429 });
-            return;
+            return false;
         }
         if (response.status === 422) {
             const payload = await response.json().catch(() => ({}));
             this.onError({ type: 'validation', status: 422, payload });
-            return;
+            return false;
         }
+        if (response.status === 503) {
+            const payload = await response.json().catch(() => ({}));
+            this.onError({
+                type: 'unavailable',
+                status: 503,
+                message: payload?.message ?? null,
+            });
+            return false;
+        }
+
         if (response.status === 502) {
             const payload = await response.json().catch(() => ({}));
             this.onError({ type: 'llm', status: 502, upstreamStatus: payload?.upstream_status ?? null, payload });
-            return;
+            return false;
         }
         if (!response.ok) {
             this.onError({ type: 'http', status: response.status });
-            return;
+            return false;
         }
 
         const data = await response.json();
@@ -74,5 +84,7 @@ export class AiChatClient {
                 this.onTitleUpdated({ title: data.conversation.title });
             }
         }
+
+        return true;
     }
 }
