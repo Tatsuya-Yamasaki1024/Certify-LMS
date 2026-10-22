@@ -38,7 +38,7 @@ class GeminiService
     public function generate(string $systemInstruction, array $contents): array
     {
         $apiKey = config('ai-chat.gemini.api_key');
-        $model = (string) config('ai-chat.gemini.model', 'gemini-2.5-flash-lite');
+        $model = (string) config('ai-chat.gemini.model', 'gemini-3.1-flash-lite');
 
         if (! is_string($apiKey) || $apiKey === '') {
             throw new RuntimeException('Gemini API キーが設定されていません。');

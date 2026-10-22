@@ -7,7 +7,7 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash-lite'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'),
     ],
 
     'daily_message_limit' => (int) env('AI_CHAT_DAILY_MESSAGE_LIMIT', 50),
