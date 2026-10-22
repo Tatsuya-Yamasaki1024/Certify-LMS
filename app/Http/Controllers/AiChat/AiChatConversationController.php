@@ -228,6 +228,7 @@ final class AiChatConversationController extends Controller
 
         $conversation->update([
             'title' => trim($validated['title']),
+            'title_manually_edited' => true,
         ]);
 
         if ($request->expectsJson()) {
@@ -363,9 +364,14 @@ final class AiChatConversationController extends Controller
                 ? ['X-Upstream-Status' => (string) $exception->response->status()]
                 : [];
 
+            $apiKey = config('ai-chat.gemini.api_key');
+            $apiKeyMissing = ! is_string($apiKey) || $apiKey === '';
+
             throw new HttpException(
-                502,
-                'AI の回答を取得できませんでした。時間をおいて再度お試しください。',
+                $apiKeyMissing ? 503 : 502,
+                $apiKeyMissing
+                    ? 'AIチャットは現在利用できません。管理者にお問い合わせください。'
+                    : 'AI の回答を取得できませんでした。時間をおいて再度お試しください。',
                 $exception,
                 $headers,
             );
@@ -390,24 +396,68 @@ final class AiChatConversationController extends Controller
                 'last_message_at' => now(),
             ]);
 
-            if (
-                config('ai-chat.auto_title.enabled')
-                && $conversation->title === '新しい会話'
-            ) {
-                $firstUserMessage = (string) $conversation->messages()
-                    ->where('role', AiChatMessageRole::User->value)
-                    ->oldest('created_at')
-                    ->value('content');
-
-                $title = mb_substr($firstUserMessage, 0, 40);
-
-                if ($title !== '') {
-                    $conversation->update(['title' => $title]);
-                }
-            }
-
             return $message;
         });
+
+        if (
+            config('ai-chat.auto_title.enabled')
+            && ! $conversation->fresh()->title_manually_edited
+        ) {
+            try {
+                $titleHistory = $conversation->messages()
+                    ->where('status', AiChatMessageStatus::Completed->value)
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->limit($historyLimit)
+                    ->get()
+                    ->reverse()
+                    ->values();
+
+                $titleContents = $titleHistory->map(
+                    fn (AiChatMessage $message): array => [
+                        'role' => $message->role === AiChatMessageRole::Assistant ? 'model' : 'user',
+                        'parts' => [
+                            ['text' => $message->content],
+                        ],
+                    ]
+                )->all();
+
+                $title = $this->geminiService->generateTitle($titleContents);
+
+                AiChatConversation::query()
+                    ->whereKey($conversation->id)
+                    ->where('title_manually_edited', false)
+                    ->update([
+                        'title' => $title,
+                    ]);
+            } catch (Throwable $exception) {
+                Log::channel('ai-chat')->warning('AI チャットのタイトル生成に失敗しました。', [
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $student->id,
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                $firstQuestion = $conversation->messages()
+                    ->where('role', AiChatMessageRole::User->value)
+                    ->where('status', AiChatMessageStatus::Completed->value)
+                    ->orderBy('created_at')
+                    ->orderBy('id')
+                    ->value('content');
+
+                if ($firstQuestion !== null) {
+                    $fallbackTitle = mb_substr(trim($firstQuestion), 0, 40);
+
+                    AiChatConversation::query()
+                        ->whereKey($conversation->id)
+                        ->where('title', '新しい会話')
+                        ->where('title_manually_edited', false)
+                        ->update([
+                            'title' => $fallbackTitle,
+                        ]);
+                }
+            }
+        }
 
         return [
             'user_message' => [

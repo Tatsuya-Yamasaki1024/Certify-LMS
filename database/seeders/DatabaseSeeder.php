@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             QuizAnsweringSeeder::class,
             MockExamSeeder::class,
             ChatSeeder::class,
+            AiChatSeeder::class,
             CertificateSeeder::class,
             PaymentSeeder::class,
         ]);
