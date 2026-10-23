@@ -131,7 +131,7 @@ final class AiChatSeeder extends Seeder
                         ? 'Gemini API の応答取得に失敗しました。'
                         : null,
                     'model' => $role === AiChatMessageRole::Assistant
-                        ? 'gemini-2.5-flash-lite'
+                        ? 'gemini-3.1-flash-lite'
                         : null,
                 ],
             );
