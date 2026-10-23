@@ -621,7 +621,7 @@ Route::middleware(['auth', 'role:coach'])
     ->prefix('settings/google-calendar')
     ->name('settings.google-calendar.')
     ->group(function () {
-        Route::get('redirect', [GoogleCalendarController::class, 'redirect'])->name('redirect');
+        Route::get('connect', [GoogleCalendarController::class, 'redirect'])->name('redirect');
         Route::get('callback', [GoogleCalendarController::class, 'callback'])->name('callback');
         Route::delete('/', [GoogleCalendarController::class, 'destroy'])->name('destroy');
     });
